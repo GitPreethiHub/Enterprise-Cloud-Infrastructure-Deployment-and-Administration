@@ -1,0 +1,15 @@
+===== SERVER INFO =====
+aegis-linux-web
+ 18:33:05 up  1:34,  2 users,  load average: 0.02, 0.01, 0.00
+               total        used        free      shared  buff/cache   available
+Mem:           912Mi       203Mi       305Mi       0.0Ki       404Mi       569Mi
+Swap:             0B          0B          0B
+Filesystem        Size  Used Avail Use% Mounted on
+devtmpfs          420M     0  420M   0% /dev
+tmpfs             457M     0  457M   0% /dev/shm
+tmpfs             183M  456K  183M   1% /run
+efivarfs          128K  2.7K  121K   3% /sys/firmware/efi/efivars
+/dev/nvme0n1p1    8.0G  1.7G  6.3G  22% /
+tmpfs             457M     0  457M   0% /tmp
+/dev/nvme0n1p128   10M  1.3M  8.7M  13% /boot/efi
+tmpfs              92M     0   92M   0% /run/user/1000
