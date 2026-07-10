@@ -4,74 +4,73 @@
 
 # Table of Contents
 
-1. Prerequisites
-2. AWS Account Setup
-3. IAM Configuration
-4. Launch Amazon EC2
-5. Connect to EC2
-6. Update Linux
-7. Install Apache HTTP Server
-8. Deploy Website
-9. Linux User Administration
-10. Amazon S3 Configuration
-11. Backup Automation
-12. Cron Scheduling
-13. Server Health Monitoring
-14. Amazon EBS Snapshot
-15. Documentation
-16. Verification
-17. Cleanup
-18. Troubleshooting
+1. Project Overview
+2. Prerequisites
+3. AWS Account Preparation
+4. Create IAM Resources
+5. Create the Network Infrastructure
+6. Launch the Linux EC2 Instance
+7. Launch the Windows Server Instance
+8. Configure Apache Web Server
+9. Perform Linux Administration
+10. Configure Amazon EFS
+11. Configure Amazon RDS MySQL
+12. Configure Amazon CloudWatch
+13. Configure Automation
+14. Backup & Recovery
+15. Verification
+16. Cleanup
+17. Troubleshooting
 
 ---
 
-# Project Overview
+# 1. Project Overview
 
-This guide explains every step required to recreate the complete infrastructure used in this repository.
+This guide explains how to recreate the complete enterprise cloud infrastructure implemented in this repository.
 
-The deployment includes:
+The deployment combines networking, compute, storage, databases, monitoring, automation, and system administration using Amazon Web Services.
 
-- Amazon EC2
-- Amazon Linux 2023
-- Apache HTTP Server
-- IAM
+The completed environment includes:
+
+- Custom Amazon VPC
+- Public and Private Subnets
+- Internet Gateway
+- Route Tables
 - Security Groups
+- Amazon Linux 2023 EC2
+- Windows Server 2022 EC2
+- Apache HTTP Server
+- Amazon EFS
+- Amazon RDS MySQL
+- Amazon CloudWatch
 - Amazon S3
-- Amazon EBS Snapshot
-- AWS CLI
+- Amazon EBS Snapshots
 - Bash Automation
-- Cron Scheduler
-
-By following this document another engineer should be able to reproduce the entire project from scratch.
+- Python Automation
 
 ---
 
-# 1. Prerequisites
+# 2. Prerequisites
 
-Before beginning, ensure you have the following.
+Before beginning ensure the following requirements are available.
 
-## AWS Account
+## AWS
 
-Create an AWS account.
-
-https://aws.amazon.com/
-
----
-
-## AWS Free Tier
-
-This project is designed to run using AWS Free Tier eligible services.
+- AWS Account
+- Root Account MFA Enabled
+- Billing Enabled
+- AWS Free Tier (recommended)
 
 ---
 
-## Software Required
+## Local Software
 
 Windows
 
-- Windows Terminal
-- VS Code
+- Visual Studio Code
 - Git
-- WinSCP (optional)
+- Windows Terminal
+- RDP Client
 
 Linux
 
@@ -79,69 +78,60 @@ Linux
 
 ---
 
-## Basic Knowledge
+## Recommended Knowledge
 
-Recommended
-
-- Linux Basics
+- Basic Linux Commands
 - AWS Console
-- Terminal Commands
+- Networking Fundamentals
+- Windows Server Basics
 
 ---
 
-# 2. AWS Account Setup
+# 3. AWS Account Preparation
 
 ## Step 1
 
-Login to AWS Console.
-
-Open
+Login to the AWS Console.
 
 ```
-https://console.aws.amazon.com/
+https://console.aws.amazon.com
 ```
 
 ---
 
 ## Step 2
 
-Open
+Enable Multi-Factor Authentication for the Root account.
+
+Navigate:
 
 ```
 IAM
+
+↓
+
+Root User
+
+↓
+
+Security Credentials
+
+↓
+
+Assign MFA Device
 ```
+
+Purpose:
+
+Protect the AWS account from unauthorized access.
 
 ---
 
 ## Step 3
 
-Enable Multi Factor Authentication (MFA)
+Create an IAM Administrator User.
 
-Purpose
-
-Protect the AWS Root Account.
-
-Verification
-
-Your AWS account should display
-
-```
-MFA Enabled
-```
-
----
-
-# 3. IAM Configuration
-
-Although the AWS Root account can perform administrative tasks, it should never be used for day-to-day infrastructure management.
-
-Instead, create an IAM Administrator User.
-
----
-
-## Create IAM User
-
-Navigate
+Navigate:
 
 ```
 IAM
@@ -155,6 +145,8 @@ Users
 Create User
 ```
 
+Configuration:
+
 Name
 
 ```
@@ -164,7 +156,7 @@ admin
 Enable
 
 ```
-Provide user access to AWS Management Console
+AWS Management Console Access
 ```
 
 Permissions
@@ -173,531 +165,25 @@ Permissions
 AdministratorAccess
 ```
 
-Purpose
-
-Using an IAM user instead of the Root account follows AWS security best practices and minimizes risk.
-
-Verification
-
-Login using the newly created IAM user before continuing.
+Sign in using the IAM user for all remaining deployment steps.
 
 ---
 
-# 4. Launch Amazon EC2
+# 4. Create IAM Resources
 
-Navigate
+## Create CloudWatch Role
 
-```
-EC2
-
-↓
-
-Instances
-
-↓
-
-Launch Instance
-```
-
-Instance Name
-
-```
-aegis-linux-web
-```
-
-Amazon Machine Image (AMI)
-
-```
-Amazon Linux 2023
-```
-
-Instance Type
-
-```
-t3.micro
-```
-
-Key Pair
-
-Create a new key pair.
-
-Download
-
-```
-aegis-key.pem
-```
-
-Store this file securely.
-
-It will be required whenever connecting through SSH or WinSCP.
-
-Never upload the PEM file to GitHub.
-
----
-
-Security Group
-
-Allow
-
-SSH
-
-```
-22
-```
-
-HTTP
-
-```
-80
-```
-
-Leave all other inbound rules disabled.
-
-Purpose
-
-SSH allows administrative access.
-
-HTTP allows visitors to access the hosted website.
-
-Verification
-
-After launching the instance the status should become
-
-```
-Running
-```
-
-with
-
-```
-2/2 Status Checks Passed
-```
----
-
-# 5. Connect to the EC2 Instance
-
-Once the EC2 instance reaches the **Running** state, it is ready for administration.
-
-There are multiple methods available to connect.
-
-## Method 1 – EC2 Instance Connect (Recommended)
-
-Navigate to:
-
-```
-EC2
-↓
-Instances
-↓
-Select your instance
-↓
-Connect
-↓
-EC2 Instance Connect
-↓
-Connect
-```
-
-This opens a browser-based Linux terminal without requiring any additional software.
-
----
-
-## Method 2 – Windows Terminal (SSH)
-
-If you downloaded the key pair during instance creation, connect using SSH.
-
-```bash
-ssh -i "aegis-key.pem" ec2-user@<Public-IP>
-```
-
-Example:
-
-```bash
-ssh -i "aegis-key.pem" ec2-user@15.xxx.xxx.xxx
-```
-
----
-
-## Verify the Connection
-
-Run the following commands:
-
-```bash
-hostname
-whoami
-pwd
-```
-
-Expected Output
-
-```
-aegis-linux-web
-ec2-user
-/home/ec2-user
-```
-
-These commands confirm:
-
-- You are connected to the correct server.
-- You are logged in as the correct user.
-- Your current working directory.
-
----
-
-# 6. Update the Operating System
-
-Before installing any software, update the operating system.
-
-```bash
-sudo dnf update -y
-```
-
-Purpose
-
-- Install the latest security patches.
-- Update installed packages.
-- Ensure package compatibility.
-
-Expected Output
-
-```
-Complete!
-```
-
-Verification
-
-Check the operating system version.
-
-```bash
-cat /etc/os-release
-```
-
-Example Output
-
-```
-PRETTY_NAME="Amazon Linux 2023"
-```
-
----
-
-# 7. Install Apache HTTP Server
-
-Apache will be used to host the website.
-
-Install Apache.
-
-```bash
-sudo dnf install httpd -y
-```
-
-Expected Output
-
-```
-Complete!
-```
-
----
-
-## Start Apache
-
-```bash
-sudo systemctl start httpd
-```
-
-Purpose
-
-Starts the Apache service immediately.
-
----
-
-## Enable Apache on Boot
-
-```bash
-sudo systemctl enable httpd
-```
-
-Purpose
-
-Ensures Apache automatically starts after every reboot.
-
----
-
-## Verify Apache Status
-
-```bash
-sudo systemctl status httpd
-```
-
-Expected Output
-
-```
-Active: active (running)
-```
-
-If Apache is not running:
-
-```bash
-sudo systemctl restart httpd
-```
-
-Check again.
-
----
-
-# 8. Deploy the Website
-
-Navigate to the Apache web root.
-
-```bash
-cd /var/www/html
-```
-
-Confirm your location.
-
-```bash
-pwd
-```
-
-Expected Output
-
-```
-/var/www/html
-```
-
----
-
-## Create the Homepage
-
-Open the default page.
-
-```bash
-sudo nano index.html
-```
-
-Replace the existing content with your custom HTML page.
-
-Save the file.
-
-```
-Ctrl + O
-Enter
-Ctrl + X
-```
-
----
-
-## Verify Locally
-
-```bash
-curl localhost
-```
-
-Expected Output
-
-Your HTML page should be displayed directly inside the terminal.
-
----
-
-## Verify Through Browser
-
-Open:
-
-```
-http://<Public-IP>
-```
-
-Example
-
-```
-http://15.xxx.xxx.xxx
-```
-
-If the webpage loads successfully, Apache has been configured correctly.
-
----
-
-### Common Errors
-
-#### Browser shows "This site can't be reached"
-
-Possible causes:
-
-- EC2 instance is stopped.
-- Wrong Public IP.
-- HTTP not allowed in Security Group.
-
----
-
-#### Connection Refused
-
-Check Apache.
-
-```bash
-sudo systemctl status httpd
-```
-
-If inactive:
-
-```bash
-sudo systemctl start httpd
-```
-
----
-
-#### Permission Denied
-
-Verify file permissions.
-
-```bash
-ls -l /var/www/html
-```
-
----
-
-# 9. Linux User Administration
-
-A production Linux server should never rely on a single administrator account.
-
-Create additional users.
-
-```bash
-sudo adduser devops
-sudo adduser support
-```
-
-Verify.
-
-```bash
-id devops
-id support
-```
-
-Expected Output
-
-```
-uid=...
-gid=...
-groups=...
-```
-
----
-
-## Grant Administrative Privileges
-
-```bash
-sudo usermod -aG wheel devops
-```
-
-Purpose
-
-Adds the **devops** user to the administrative group.
-
-Verify.
-
-```bash
-groups devops
-```
-
-Expected Output
-
-```
-devops wheel
-```
-
----
-
-## Verify User Information
-
-```bash
-cat /etc/passwd | grep devops
-```
-
-This confirms the account was successfully created.
-
----
-
-### Why Multiple Users?
-
-Using separate Linux accounts improves security by:
-
-- Tracking user activity.
-- Preventing shared administrator credentials.
-- Following the principle of least privilege.
----
-
-# 10. Configure Amazon S3
-
-The next objective is to configure cloud-based backup storage.
-
-Instead of storing backup files only on the EC2 instance, backups will be uploaded to Amazon S3. This provides durable, highly available storage and simulates a common enterprise backup workflow.
-
----
-
-## Create an Amazon S3 Bucket
-
-Navigate to:
-
-```
-AWS Console
-↓
-Amazon S3
-↓
-Create Bucket
-```
-
-Bucket Name
-
-```
-preethi-aegis-backups-2026
-```
-
-*(Use a globally unique bucket name if this one is unavailable.)*
-
-Region
-
-Select the same AWS Region as your EC2 instance.
-
-Leave the remaining settings at their default values for this project.
-
-Click:
-
-```
-Create Bucket
-```
-
----
-
-## Verify Bucket Creation
-
-Open the bucket.
-
-It should initially be empty.
-
-Verification
-
-```
-Bucket Created Successfully
-```
-
----
-
-# 11. Configure IAM Role for EC2
-
-Instead of storing AWS Access Keys on the server, the EC2 instance will authenticate using an IAM Role.
-
-This is considered an AWS security best practice because credentials are automatically managed by AWS and are never stored on the server.
-
----
-
-## Create IAM Role
-
-Navigate to:
+Navigate:
 
 ```
 IAM
+
 ↓
+
 Roles
+
 ↓
+
 Create Role
 ```
 
@@ -713,392 +199,990 @@ Use Case
 EC2
 ```
 
-Permissions
-
-Attach the following managed policy:
+Attach Policy
 
 ```
-AmazonS3FullAccess
+CloudWatchAgentServerPolicy
 ```
 
 Role Name
 
 ```
-EC2-S3-Backup-Role
+EC2-CloudWatch-Role
 ```
 
-Click
-
-```
-Create Role
-```
+Create the role.
 
 ---
 
-## Attach the IAM Role
+## Attach the Role
 
-Navigate to
+Navigate:
 
 ```
 EC2
+
 ↓
+
 Instances
+
 ↓
+
+Linux Instance
+
+↓
+
 Actions
+
 ↓
+
 Security
+
 ↓
+
 Modify IAM Role
 ```
 
-Select
+Attach
 
 ```
-EC2-S3-Backup-Role
-```
-
-Click
-
-```
-Update IAM Role
-```
-
----
-
-## Verify IAM Role
-
-Connect to the EC2 instance.
-
-Run:
-
-```bash
-aws sts get-caller-identity
-```
-
-Expected Output
-
-```json
-{
-    "Account": "...",
-    "Arn": "...",
-    "UserId": "..."
-}
-```
-
-This confirms that the EC2 instance can securely authenticate with AWS.
-
----
-
-## Verify AWS CLI
-
-Amazon Linux 2023 includes AWS CLI by default.
-
-Run:
-
-```bash
-aws --version
-```
-
-Expected Output
-
-```text
-aws-cli/2.x.x
-```
-
----
-
-# 12. Create the Backup Automation Script
-
-Navigate to the home directory.
-
-```bash
-cd ~
-```
-
-Create the script.
-
-```bash
-nano backup_to_s3.sh
-```
-
-Paste the following:
-
-```bash
-#!/bin/bash
-
-DATE=$(date +%Y-%m-%d-%H-%M)
-
-cp /var/www/html/index.html backup-$DATE.html
-
-aws s3 cp backup-$DATE.html s3://preethi-aegis-backups-2026/
-
-echo "Backup completed at $(date)"
-```
-
-Save the file.
-
-```
-Ctrl + O
-
-Enter
-
-Ctrl + X
-```
-
----
-
-## Make the Script Executable
-
-```bash
-chmod +x backup_to_s3.sh
+EC2-CloudWatch-Role
 ```
 
 Verification
 
-```bash
-ls -l backup_to_s3.sh
-```
-
-Expected Output
-
-```
--rwxr-xr-x
-```
-
-The **x** permission confirms the script can be executed.
-
----
-
-## Execute the Script
-
-```bash
-./backup_to_s3.sh
-```
-
-Expected Output
-
-```
-upload: ./backup-2026-xx-xx.html to s3://...
-Backup completed at ...
-```
-
----
-
-## Verify the Upload
-
-```bash
-aws s3 ls s3://preethi-aegis-backups-2026/
-```
-
-Expected Output
-
-```
-backup-2026-xx-xx.html
-```
-
-If the backup file appears, the upload was successful.
-
----
-
-### Common Errors
-
-#### Access Denied
-
-Cause
-
-IAM Role is missing or does not have S3 permissions.
-
-Solution
-
-Verify the IAM Role is attached to the EC2 instance and includes the required S3 permissions.
-
----
-
-#### Bucket Does Not Exist
-
-Cause
-
-Incorrect bucket name.
-
-Solution
-
-Confirm the bucket name exactly matches the name used in the script.
-
----
-
-#### AWS CLI Cannot Find Credentials
-
-Cause
-
-IAM Role has not propagated yet.
-
-Solution
-
-Wait a few minutes after attaching the IAM Role, then run:
+Run:
 
 ```bash
 aws sts get-caller-identity
 ```
 
-again.
+Expected:
+
+The command should return your AWS Account information without requiring AWS credentials.
 
 ---
 
-# Why Use Amazon S3?
+# 5. Create the Network Infrastructure
 
-Amazon S3 provides durable object storage that is commonly used for:
+Navigate:
 
-- Application backups
-- Log storage
-- Static website assets
-- Disaster recovery
-- Data archival
+```
+VPC
 
-Using S3 instead of storing backups locally protects data even if the EC2 instance is terminated.
+↓
+
+Create VPC
+```
+
+Configuration
+
+| Setting | Value |
+|---------|-------|
+| Name | enterprise-vpc |
+| CIDR | 10.0.0.0/16 |
+
+Create the VPC.
+
 ---
 
-# 13. Schedule Automatic Backups Using Cron
+## Create Public Subnet
 
-The backup script currently requires manual execution.
+```
+10.0.1.0/24
+```
 
-To automate the process, Linux Cron can be used to execute the script at scheduled intervals.
+Availability Zone
+
+```
+ap-south-1a
+```
+
+Enable
+
+```
+Auto Assign Public IPv4
+```
 
 ---
 
-## Open Cron Editor
+## Create Private Subnet
+
+```
+10.0.2.0/24
+```
+
+Availability Zone
+
+```
+ap-south-1b
+```
+
+Leave public IP assignment disabled.
+
+---
+
+## Create Internet Gateway
+
+Navigate
+
+```
+VPC
+
+↓
+
+Internet Gateways
+
+↓
+
+Create
+```
+
+Name
+
+```
+enterprise-igw
+```
+
+Attach it to the VPC.
+
+---
+
+## Create Public Route Table
+
+Create a Route Table.
+
+Associate it with the Public Subnet.
+
+Add Route
+
+Destination
+
+```
+0.0.0.0/0
+```
+
+Target
+
+```
+Internet Gateway
+```
+
+---
+
+## Create Security Groups
+
+Create separate Security Groups for:
+
+- Linux EC2
+- Windows Server
+- Amazon RDS
+- Amazon EFS
+
+Recommended Rules
+
+Linux
+
+| Port | Purpose |
+|------|----------|
+|22|SSH|
+|80|HTTP|
+
+Windows
+
+| Port | Purpose |
+|------|----------|
+|3389|RDP|
+
+RDS
+
+| Port | Purpose |
+|------|----------|
+|3306|MySQL|
+
+EFS
+
+| Port | Purpose |
+|------|----------|
+|2049|NFS|
+
+Verification
+
+Confirm that:
+
+- VPC is Available
+- Public Subnet exists
+- Private Subnet exists
+- Internet Gateway is Attached
+- Route Table is Active
+- Security Groups are Created
+
+---
+
+# 6. Launch the Linux EC2 Instance
+
+Navigate:
+
+```
+EC2
+
+↓
+
+Launch Instance
+```
+
+Configuration
+
+| Setting | Value |
+|---------|-------|
+| Name | enterprise-linux-server |
+| AMI | Amazon Linux 2023 |
+| Instance Type | t3.micro |
+| Key Pair | Create New |
+| VPC | enterprise-vpc |
+| Public Subnet | Yes |
+| Security Group | enterprise-linux-sg |
+
+Launch the instance.
+
+Wait until
+
+```
+Running
+
+2/2 Status Checks Passed
+```
+
+---
+
+## Connect
+
+Use
+
+```
+EC2 Instance Connect
+```
+
+or
+
+```
+SSH
+```
+
+Verify
 
 ```bash
-crontab -e
+hostname
+
+whoami
+
+cat /etc/os-release
 ```
 
-If prompted for an editor, choose:
+Expected
+
+Amazon Linux 2023.
+
+---
+
+# 7. Launch the Windows Server EC2 Instance
+
+Navigate:
 
 ```
-nano
+EC2
+
+↓
+
+Launch Instance
+```
+
+Configuration
+
+| Setting | Value |
+|---------|-------|
+| Name | enterprise-windows-server |
+| AMI | Microsoft Windows Server 2022 Base |
+| Instance Type | t3.micro |
+| Key Pair | Existing Key Pair |
+| VPC | enterprise-vpc |
+| Public Subnet | Yes |
+| Security Group | enterprise-windows-sg |
+
+Launch the instance.
+
+Wait until:
+
+```
+Running
+
+2/2 Status Checks Passed
 ```
 
 ---
 
-## Add the Following Entry
+## Connect using Remote Desktop
 
-```cron
-0 2 * * * /home/ec2-user/backup_to_s3.sh
+Navigate:
+
+```
+EC2
+
+↓
+
+Instance
+
+↓
+
+Connect
+
+↓
+
+RDP Client
 ```
 
-Meaning
+Retrieve the Windows Administrator password using the key pair.
 
-| Field | Value | Description |
-|-------|-------|-------------|
-| Minute | 0 | At minute 0 |
-| Hour | 2 | 2 AM |
-| Day | * | Every day |
-| Month | * | Every month |
-| Weekday | * | Every day of the week |
+Connect using Microsoft Remote Desktop.
 
 ---
 
-## Save
+## Verify Windows Administration Tools
 
-Nano
+Open and verify the following tools.
+
+### System Information
+
+- Windows Version
+- CPU
+- Installed Memory
+
+---
+
+### Computer Management
+
+Verify
+
+- Shared Folders
+- Local Users
+- Device Manager
+- Event Logs
+
+---
+
+### Services
+
+Open
 
 ```
-Ctrl + O
-
-Enter
-
-Ctrl + X
+services.msc
 ```
+
+Verify that Windows Services are operational.
+
+---
+
+### Event Viewer
+
+Open
+
+```
+eventvwr.msc
+```
+
+Inspect:
+
+- Application Logs
+- System Logs
+- Security Logs
+
+---
+
+### Windows Defender Firewall
+
+Verify firewall configuration.
+
+---
+
+### Disk Management
+
+Open
+
+```
+diskmgmt.msc
+```
+
+Inspect available storage volumes.
+
+---
+
+# 8. Configure Apache HTTP Server
+
+Connect to the Linux EC2 instance.
+
+Update packages.
+
+```bash
+sudo dnf update -y
+```
+
+Install Apache.
+
+```bash
+sudo dnf install httpd -y
+```
+
+Start Apache.
+
+```bash
+sudo systemctl start httpd
+```
+
+Enable Apache.
+
+```bash
+sudo systemctl enable httpd
+```
+
+Verify.
+
+```bash
+sudo systemctl status httpd
+```
+
+Create the sample webpage.
+
+```bash
+sudo nano /var/www/html/index.html
+```
+
+Access the server using:
+
+```
+http://<EC2-Public-IP>
+```
+
+Expected Result
+
+The sample Apache webpage should load successfully.
+
+---
+
+# 9. Linux Administration
+
+Perform routine administration tasks.
+
+---
+
+## System Information
+
+```bash
+hostname
+
+uptime
+
+free -h
+
+df -h
+
+top
+```
+
+---
+
+## Package Management
+
+```bash
+sudo dnf check-update
+
+sudo dnf install git python3 -y
+```
+
+---
+
+## User Management
+
+Create a user.
+
+```bash
+sudo adduser developer
+```
+
+Set a password.
+
+```bash
+sudo passwd developer
+```
+
+Verify.
+
+```bash
+id developer
+
+groups developer
+```
+
+---
+
+## Service Management
+
+Check Apache.
+
+```bash
+sudo systemctl status httpd
+```
+
+Restart Apache.
+
+```bash
+sudo systemctl restart httpd
+```
+
+---
+
+## File Permissions
+
+```bash
+ls -la
+
+chmod
+
+chown
+```
+
+---
+
+# 10. Configure Amazon EFS
+
+Navigate:
+
+```
+Amazon EFS
+
+↓
+
+Create File System
+```
+
+Configuration
+
+| Setting | Value |
+|---------|-------|
+| Name | enterprise-shared-storage |
+| Performance Mode | General Purpose |
+| Throughput | Elastic |
+| Encryption | Enabled |
+
+Create the file system.
+
+---
+
+## Configure Mount Target
+
+Create a Mount Target inside the same VPC.
+
+Assign
+
+```
+enterprise-efs-sg
+```
+
+Wait until
+
+```
+Available
+```
+
+---
+
+## Install EFS Utilities
+
+On Linux
+
+```bash
+sudo dnf install amazon-efs-utils -y
+```
+
+---
+
+## Create Mount Directory
+
+```bash
+sudo mkdir /mnt/efs
+```
+
+---
+
+## Mount Amazon EFS
+
+```bash
+sudo mount -t efs fs-xxxxxxxx:/ /mnt/efs
+```
+
+Replace
+
+```
+fs-xxxxxxxx
+```
+
+with your File System ID.
 
 ---
 
 ## Verify
 
 ```bash
+df -h
+```
+
+Create a test file.
+
+```bash
+echo "Enterprise Infrastructure" | sudo tee /mnt/efs/test.txt
+```
+
+Verify.
+
+```bash
+cat /mnt/efs/test.txt
+```
+
+---
+
+# 11. Configure Amazon RDS MySQL
+
+Navigate:
+
+```
+Amazon RDS
+
+↓
+
+Create Database
+```
+
+Configuration
+
+| Setting | Value |
+|---------|-------|
+| Engine | MySQL Community |
+| Version | MySQL 8.x |
+| Template | Free Tier |
+| DB Identifier | enterprise-mysql-db |
+| Instance Class | db.t4g.micro |
+| Storage | 20 GB |
+| Public Access | No |
+
+Create the database.
+
+---
+
+## Configure Security
+
+Attach
+
+```
+enterprise-rds-sg
+```
+
+Allow inbound MySQL traffic on
+
+```
+3306
+```
+
+from the Linux EC2 Security Group.
+
+---
+
+## Verify
+
+Wait until the database status becomes
+
+```
+Available
+```
+
+Record the endpoint for future connections.
+
+Example
+
+```
+enterprise-mysql-db.xxxxxxxxx.ap-south-1.rds.amazonaws.com
+```
+
+No application was deployed in this project; the RDS instance was provisioned and configured to demonstrate managed database deployment and secure network connectivity within the VPC.
+
+---
+---
+
+# 12. Configure Amazon CloudWatch
+
+Amazon CloudWatch was configured to monitor the Linux EC2 instance beyond the default EC2 metrics.
+
+---
+
+## Install CloudWatch Agent
+
+```bash
+sudo dnf install amazon-cloudwatch-agent -y
+```
+
+Verify installation.
+
+```bash
+amazon-cloudwatch-agent-ctl -a status
+```
+
+---
+
+## Configure the Agent
+
+Run the configuration wizard.
+
+```bash
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
+```
+
+Configuration used:
+
+| Setting | Value |
+|---------|-------|
+| Environment | EC2 |
+| User | cwagent |
+| Host Metrics | Enabled |
+| Per-Core CPU | No |
+| EC2 Dimensions | Enabled |
+| Collection Interval | 60 Seconds |
+| Metrics | Basic |
+| Logs | Disabled |
+| X-Ray | Disabled |
+| Store in SSM | No |
+
+---
+
+## Attach IAM Role
+
+Attach an IAM Role containing:
+
+```
+CloudWatchAgentServerPolicy
+```
+
+Restart the CloudWatch Agent.
+
+```bash
+sudo systemctl restart amazon-cloudwatch-agent
+```
+
+Verify.
+
+```bash
+sudo systemctl status amazon-cloudwatch-agent
+```
+
+---
+
+## Create Dashboard
+
+Navigate:
+
+```
+CloudWatch
+
+↓
+
+Dashboards
+
+↓
+
+Create Dashboard
+```
+
+Add widgets for:
+
+- CPU Utilization
+- Memory Usage
+- Disk Usage
+
+---
+
+## Create Alarm
+
+Navigate:
+
+```
+CloudWatch
+
+↓
+
+Alarms
+
+↓
+
+Create Alarm
+```
+
+Configuration
+
+Metric
+
+```
+CPUUtilization
+```
+
+Statistic
+
+```
+Average
+```
+
+Threshold
+
+```
+Greater than 70%
+```
+
+Period
+
+```
+5 Minutes
+```
+
+Create the alarm.
+
+---
+
+# 13. Infrastructure Automation
+
+Automation was implemented using Bash scripts, Python, and Linux Cron.
+
+---
+
+## Apache Deployment Script
+
+Location
+
+```
+Scripts/apache_setup.sh
+```
+
+Purpose
+
+- Install Apache
+- Start Service
+- Enable Boot Startup
+- Deploy Sample Webpage
+
+Execute
+
+```bash
+bash Scripts/apache_setup.sh
+```
+
+---
+
+## Server Health Script
+
+Location
+
+```
+Scripts/server_health_check.sh
+```
+
+Execute
+
+```bash
+bash Scripts/server_health_check.sh
+```
+
+The script reports:
+
+- Hostname
+- Uptime
+- Disk Usage
+- Memory Usage
+- System Information
+
+---
+
+## Python Health Report
+
+Location
+
+```
+python/system_health_report.py
+```
+
+Execute
+
+```bash
+python3 python/system_health_report.py
+```
+
+Output includes:
+
+- Date
+- Hostname
+- Uptime
+- Disk Usage
+- Available Disk Space
+
+---
+
+## Cron Scheduler
+
+Open Cron.
+
+```bash
+crontab -e
+```
+
+Example
+
+```cron
+0 * * * * /home/ec2-user/Scripts/server_health_check.sh
+```
+
+Verify
+
+```bash
 crontab -l
 ```
 
-Expected Output
+---
 
-```cron
-0 2 * * * /home/ec2-user/backup_to_s3.sh
-```
+# 14. Backup & Recovery
 
 ---
 
-## Why Cron?
+## Amazon S3 Backup
 
-Cron allows Linux administrators to automate repetitive administrative tasks such as:
-
-- backups
-- log cleanup
-- monitoring
-- package updates
-- maintenance jobs
-
----
-
-# 14. Server Health Monitoring
-
-Routine monitoring helps administrators identify infrastructure issues before they impact users.
-
-Create a health check script.
+Execute
 
 ```bash
-nano server_health_check.sh
+bash Scripts/backup_to_s3.sh
 ```
 
-Paste the health check script included in this repository.
-
----
-
-## Make Executable
-
-```bash
-chmod +x server_health_check.sh
-```
-
----
-
-## Execute
-
-```bash
-./server_health_check.sh
-```
-
-The report displays:
-
-- Current date and time
-- Hostname
-- Logged-in user
-- System uptime
-- Operating system
-- Kernel version
-- Memory usage
-- Disk usage
-- Mounted storage devices
-- Apache status
-- Running services
-- Network interfaces
-- Listening ports
-- Public IP address
-
----
-
-## Verification
-
-A successful execution should end with
+Verify uploaded files.
 
 ```
-Health Check Completed Successfully
+Amazon S3
+
+↓
+
+Bucket
+
+↓
+
+Objects
 ```
 
 ---
 
-# 15. Create an Amazon EBS Snapshot
+## Amazon EBS Snapshot
 
-Snapshots provide point-in-time backups of an EBS volume.
-
-Navigate to
+Navigate
 
 ```
 EC2
@@ -1109,386 +1193,85 @@ Volumes
 
 ↓
 
-Select Root Volume
-
-↓
-
-Actions
-
-↓
-
 Create Snapshot
 ```
 
-Description
+Verify
 
 ```
-Initial Infrastructure Backup
-```
-
-Click
-
-```
-Create Snapshot
-```
-
----
-
-## Verify
-
-Navigate
-
-```
-EC2
-
-↓
-
 Snapshots
-```
 
-Status
+↓
 
-```
 Completed
 ```
 
 ---
 
-## Why Snapshots?
+# 15. Deployment Verification
 
-Snapshots provide:
+Verify the following components.
 
-- disaster recovery
-
-- data protection
-
-- infrastructure restoration
-
-- backup versioning
-
----
-
-# 16. Generate Project Documentation
-
-Generate a list of installed packages.
-
-```bash
-rpm -qa > installed-packages.txt
-```
-
----
-
-Generate a system report.
-
-```bash
-echo "===== SERVER REPORT =====" > system-report.txt
-
-date >> system-report.txt
-
-hostname >> system-report.txt
-
-uptime >> system-report.txt
-
-free -h >> system-report.txt
-
-df -h >> system-report.txt
-
-lsblk >> system-report.txt
-```
+| Component | Status |
+|----------|--------|
+| VPC | Created |
+| Public Subnet | Created |
+| Private Subnet | Created |
+| Internet Gateway | Attached |
+| Route Table | Configured |
+| Security Groups | Configured |
+| Linux EC2 | Running |
+| Windows EC2 | Running |
+| Apache | Accessible |
+| Amazon EFS | Mounted |
+| Amazon RDS | Available |
+| CloudWatch Agent | Running |
+| CloudWatch Dashboard | Created |
+| CloudWatch Alarm | Created |
+| Bash Scripts | Working |
+| Python Script | Working |
+| Amazon S3 Backup | Completed |
+| Amazon EBS Snapshot | Created |
 
 ---
 
-Verify.
+# 16. Cleanup
 
-```bash
-cat system-report.txt
-```
+To avoid unnecessary AWS charges, remove or stop resources after completing the deployment.
 
----
+Recommended cleanup order:
 
-# 17. Package Project Files
+1. Delete the Amazon RDS instance.
+2. Unmount and delete the Amazon EFS file system.
+3. Stop the Windows Server EC2 instance.
+4. Stop the Linux EC2 instance.
+5. Delete EBS snapshots if no longer required.
+6. Delete unused Security Groups if they are no longer attached.
+7. Delete the custom VPC only after all dependent resources have been removed.
 
-Create folders.
-
-```bash
-mkdir -p ~/project-docs/scripts
-
-mkdir -p ~/project-docs/configs
-
-mkdir -p ~/project-docs/backups
-
-mkdir -p ~/project-docs/logs
-```
-
-Copy project files.
-
-```bash
-cp backup_to_s3.sh ~/project-docs/scripts/
-
-cp server_health_check.sh ~/project-docs/scripts/
-```
-
-Archive the project.
-
-```bash
-cd ~/project-docs
-
-zip -r project-files.zip .
-```
-
-Verification
-
-```bash
-ls
-```
-
-Expected
-
-```
-project-files.zip
-```
+CloudWatch Dashboards, Alarms, IAM Roles, and repository files can be retained for documentation purposes.
 
 ---
 
-# 18. Final Verification Checklist
+# 17. Troubleshooting
 
-Before publishing the project verify the following.
-
-## AWS
-
-- EC2 Running
-
-- Apache Running
-
-- S3 Bucket Created
-
-- IAM Role Attached
-
-- Backup Uploaded Successfully
-
-- Snapshot Created
+| Issue | Solution |
+|---------|----------|
+| Apache page not loading | Verify Security Group allows TCP Port 80 and ensure the Apache service is running. |
+| Unable to SSH into Linux EC2 | Confirm Port 22 is open and the correct key pair is being used. |
+| Unable to connect to Windows Server | Verify Port 3389 is open and retrieve the correct Administrator password. |
+| Amazon EFS not mounting | Check mount targets, DNS resolution, and Security Group rules allowing NFS (2049). |
+| RDS inaccessible | Verify the RDS Security Group allows MySQL (3306) traffic from the EC2 Security Group. |
+| CloudWatch metrics missing | Attach the CloudWatchAgentServerPolicy IAM Role and restart the CloudWatch Agent. |
+| CloudWatch Dashboard empty | Wait a few minutes for metrics to populate after the agent starts. |
+| S3 upload fails | Confirm AWS CLI permissions and bucket name are correct. |
 
 ---
 
-## Linux
+# Deployment Complete
 
-- Apache Running
+The environment now demonstrates an enterprise-style AWS infrastructure featuring secure networking, Linux and Windows administration, managed storage, relational databases, monitoring, automation, and backup strategies.
 
-- Users Created
+The completed deployment provides practical experience with common Infrastructure Engineer responsibilities, including provisioning cloud resources, configuring networking, implementing monitoring, automating administrative tasks, and documenting the deployment lifecycle.
 
-- Permissions Configured
-
-- Backup Script Working
-
-- Health Script Working
-
-- Cron Working
-
----
-
-## Documentation
-
-- README Completed
-
-- Deployment Guide Completed
-
-- Commands Reference Added
-
-- Screenshots Added
-
-- Architecture Diagram Added
-
----
-
-# 19. Cleanup
-
-After the project has been documented and pushed to GitHub, remove AWS resources to avoid unnecessary charges.
-
-Terminate EC2 Instance
-
-```
-EC2
-
-↓
-
-Instances
-
-↓
-
-Terminate Instance
-```
-
-Delete Snapshot
-
-```
-EC2
-
-↓
-
-Snapshots
-
-↓
-
-Delete
-```
-
-Delete S3 Objects
-
-```
-Amazon S3
-
-↓
-
-Empty Bucket
-```
-
-Delete Bucket
-
-```
-Amazon S3
-
-↓
-
-Delete Bucket
-```
-
-Delete IAM Role (Optional)
-
-```
-IAM
-
-↓
-
-Roles
-
-↓
-
-Delete
-```
-
----
-
-# Troubleshooting
-
-## Apache not accessible
-
-Verify
-
-```bash
-sudo systemctl status httpd
-```
-
-Restart
-
-```bash
-sudo systemctl restart httpd
-```
-
----
-
-## SSH Connection Failed
-
-Verify
-
-- EC2 is running
-- Correct Public IP
-- Security Group allows Port 22
-- Correct PEM file
-
----
-
-## AWS CLI Access Denied
-
-Verify
-
-```bash
-aws sts get-caller-identity
-```
-
-Confirm IAM Role is attached.
-
----
-
-## Backup Upload Failed
-
-Verify bucket name.
-
-```bash
-aws s3 ls
-```
-
-Check IAM permissions.
-
----
-
-## Cron Not Running
-
-Verify
-
-```bash
-crontab -l
-```
-
-Restart Cron if required.
-
----
-
-# Learning Outcomes
-
-After completing this project you should be able to:
-
-✅ Deploy an EC2 instance.
-
-✅ Configure Apache HTTP Server.
-
-✅ Create Linux users and groups.
-
-✅ Manage file permissions.
-
-✅ Configure Security Groups.
-
-✅ Create IAM Users and IAM Roles.
-
-✅ Use AWS CLI.
-
-✅ Automate backups using Bash.
-
-✅ Store backups in Amazon S3.
-
-✅ Schedule automation using Cron.
-
-✅ Monitor Linux servers.
-
-✅ Create Amazon EBS snapshots.
-
-✅ Troubleshoot common infrastructure issues.
-
-✅ Document cloud infrastructure professionally.
-
----
-
-# Conclusion
-
-This project demonstrates the complete lifecycle of deploying, administering, securing, monitoring, documenting, and maintaining a Linux server on Amazon Web Services.
-
-Rather than focusing only on resource creation, the project emphasizes operational administration, automation, backup strategies, troubleshooting, and documentation, reflecting responsibilities commonly performed by Cloud Support Engineers, Infrastructure Engineers, and Linux System Administrators.
-
-It provides a strong foundation for future projects involving Docker, Kubernetes, Infrastructure as Code (Terraform), CI/CD pipelines, monitoring solutions, and highly available cloud architectures.
-
----
-
-# Author
-
-**Preethi M**
-
-Bachelor of Engineering – Computer Science Engineering (Cyber Security)
-
-GitHub
-
-https://github.com/GitPreethiHub
-
----
-
-# License
-
-This project is licensed under the MIT License.
+Refer to the `README.md` for the complete project overview and the `screenshots/` directory for deployment evidence.

@@ -1,0 +1,6 @@
+$ sudo mount -t efs fs-0b0014dde61871822:/ /mnt/efs
+
+$ df -h
+
+Filesystem      Size  Used Avail Use% Mounted on
+127.0.0.1:/      8E     0    8E   0%  /mnt/efs

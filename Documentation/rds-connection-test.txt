@@ -1,0 +1,25 @@
+Amazon RDS MySQL Instance
+
+DB Identifier:
+enterprise-mysql-db
+
+Database Name:
+enterprise_db
+
+Engine:
+MySQL Community Edition
+
+Port:
+3306
+
+Endpoint:
+enterprise-mysql-db.cbkmy06yi450.ap-south-1.rds.amazonaws.com
+
+Status:
+Available
+
+Connectivity:
+Configured within VPC using dedicated Security Group.
+
+Public Accessibility:
+Disabled
